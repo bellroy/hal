@@ -18,6 +18,7 @@ import Data.Map     (Map)
 import Data.Text    (Text)
 import GHC.Generics (Generic)
 
+-- See https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
 newtype Records = Records {
   records :: [SQSEvent]
 } deriving (Show, Eq)
@@ -29,7 +30,8 @@ data Attributes = Attributes {
   approximateReceiveCount          :: Text,
   sentTimestamp                    :: Text,
   senderId                         :: Text,
-  approximateFirstReceiveTimestamp :: Text
+  approximateFirstReceiveTimestamp :: Text,
+  messageGroupId                   :: Text
 } deriving (Show, Eq)
 
 instance FromJSON Attributes where
@@ -39,6 +41,7 @@ instance FromJSON Attributes where
       <*> v .: "SentTimestamp"
       <*> v .: "SenderId"
       <*> v .: "ApproximateFirstReceiveTimestamp"
+      <*> v .: "MessageGroupId"
 
 data SQSEvent = SQSEvent {
   messageId         :: Text,
