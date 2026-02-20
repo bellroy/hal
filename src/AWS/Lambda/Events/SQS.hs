@@ -21,7 +21,10 @@ import Data.Map     (Map)
 import Data.Text    (Text)
 import GHC.Generics (Generic)
 
--- See https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
+-- | Represents an event from AWS SQS.
+--
+-- See the <https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html AWS documentation>
+-- for a sample payload.
 newtype Records = Records {
   records :: [SQSEvent]
 } deriving (Show, Eq, Generic)
