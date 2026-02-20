@@ -21,7 +21,7 @@ import GHC.Generics (Generic)
 -- See https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html
 newtype Records = Records {
   records :: [SQSEvent]
-} deriving (Show, Eq)
+} deriving (Show, Eq, Generic)
 
 instance FromJSON Records where
   parseJSON = withObject "Records" $ \v -> Records <$> v .: "Records"
@@ -32,7 +32,7 @@ data Attributes = Attributes {
   senderId                         :: Text,
   approximateFirstReceiveTimestamp :: Text,
   messageGroupId                   :: Text
-} deriving (Show, Eq)
+} deriving (Show, Eq, Generic)
 
 instance FromJSON Attributes where
   parseJSON = withObject "Attributes" $ \v ->
