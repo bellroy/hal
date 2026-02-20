@@ -1,3 +1,6 @@
+{-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE RecordWildCards #-}
+
 {-|
 Module      : AWS.Lambda.Events.SQS
 Description : Data types for working with SQS events.
@@ -35,13 +38,13 @@ data Attributes = Attributes {
 } deriving (Show, Eq, Generic)
 
 instance FromJSON Attributes where
-  parseJSON = withObject "Attributes" $ \v ->
-    Attributes
-      <$> v .: "ApproximateReceiveCount"
-      <*> v .: "SentTimestamp"
-      <*> v .: "SenderId"
-      <*> v .: "ApproximateFirstReceiveTimestamp"
-      <*> v .: "MessageGroupId"
+  parseJSON = withObject "Attributes" $ \v -> do
+    approximateReceiveCount <- v .: "ApproximateReceiveCount"
+    sentTimestamp <- v .: "SentTimestamp"
+    senderId <- v .: "SenderId"
+    approximateFirstReceiveTimestamp <- v .: "ApproximateFirstReceiveTimestamp"
+    messageGroupId <- v .: "MessageGroupId"
+    pure Attributes {..}
 
 data SQSEvent = SQSEvent {
   messageId         :: Text,
