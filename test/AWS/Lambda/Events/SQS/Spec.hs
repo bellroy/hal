@@ -54,7 +54,7 @@ expectedRecords = Records
               , sentTimestamp = "1523232000000"
               , senderId = "123456789012"
               , approximateFirstReceiveTimestamp = "1523232000001"
-              , messageGroupId = "group-1"
+              , messageGroupId = Just "group-1"
               }
           , messageAttributes = M.fromList
               [ ("attribute1", "value1")

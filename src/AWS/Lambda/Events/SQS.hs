@@ -16,7 +16,7 @@ module AWS.Lambda.Events.SQS (
   SQSEvent (..)
 ) where
 
-import Data.Aeson   (FromJSON (..), withObject, (.:))
+import Data.Aeson   (FromJSON (..), withObject, (.:), (.:?))
 import Data.Map     (Map)
 import Data.Text    (Text)
 import GHC.Generics (Generic)
@@ -37,7 +37,7 @@ data Attributes = Attributes {
   sentTimestamp                    :: Text,
   senderId                         :: Text,
   approximateFirstReceiveTimestamp :: Text,
-  messageGroupId                   :: Text
+  messageGroupId                   :: Maybe Text
 } deriving (Show, Eq, Generic)
 
 instance FromJSON Attributes where
@@ -46,7 +46,7 @@ instance FromJSON Attributes where
     sentTimestamp <- v .: "SentTimestamp"
     senderId <- v .: "SenderId"
     approximateFirstReceiveTimestamp <- v .: "ApproximateFirstReceiveTimestamp"
-    messageGroupId <- v .: "MessageGroupId"
+    messageGroupId <- v .:? "MessageGroupId"
     pure Attributes {..}
 
 data SQSEvent = SQSEvent {
