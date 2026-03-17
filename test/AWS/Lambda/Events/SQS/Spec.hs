@@ -30,8 +30,18 @@ samplePayload = [r|
         "MessageGroupId": "group-1"
       },
       "messageAttributes": {
-        "attribute1": "value1",
-        "attribute2": "value2"
+        "attribute1": {
+          "stringValue": "value1",
+          "stringListValues": [],
+          "binaryListValues": [],
+          "dataType": "String"
+        },
+        "attribute2": {
+          "binaryValue": "dmFsdWUy",
+          "stringListValues": [],
+          "binaryListValues": [],
+          "dataType": "Binary"
+        }
       },
       "md5OfBody": "9a0364b9e99bb480dd25e1f0284c8555",
       "eventSource": "aws:sqs",
@@ -57,8 +67,24 @@ expectedRecords = Records
               , messageGroupId = Just "group-1"
               }
           , messageAttributes = M.fromList
-              [ ("attribute1", "value1")
-              , ("attribute2", "value2")
+              [ ( "attribute1"
+                , MessageAttributeValue
+                    { stringValue = Just "value1"
+                    , binaryValue = Nothing
+                    , stringListValues = []
+                    , binaryListValues = []
+                    , dataType = "String"
+                    }
+                )
+              , ( "attribute2"
+                , MessageAttributeValue
+                    { stringValue = Nothing
+                    , binaryValue = Just "value2"
+                    , stringListValues = []
+                    , binaryListValues = []
+                    , dataType = "Binary"
+                    }
+                )
               ]
           , md5OfBody = "9a0364b9e99bb480dd25e1f0284c8555"
           , eventSource = "aws:sqs"

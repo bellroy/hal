@@ -1,4 +1,4 @@
-{-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE ApplicativeDo   #-}
 {-# LANGUAGE RecordWildCards #-}
 
 {-|
@@ -13,13 +13,17 @@ Stability   : stable
 module AWS.Lambda.Events.SQS (
   Records (..),
   Attributes (..),
+  MessageAttributeValue (..),
   SQSEvent (..)
 ) where
 
-import Data.Aeson   (FromJSON (..), withObject, (.:), (.:?))
-import Data.Map     (Map)
-import Data.Text    (Text)
-import GHC.Generics (Generic)
+import           Data.Aeson             (FromJSON (..), withObject, (.:), (.:?))
+import           Data.ByteString        (ByteString)
+import qualified Data.ByteString.Base64 as B64
+import           Data.Map               (Map)
+import           Data.Text              (Text)
+import qualified Data.Text.Encoding     as TE
+import           GHC.Generics           (Generic)
 
 -- | Represents an event from AWS SQS.
 --
@@ -49,12 +53,29 @@ instance FromJSON Attributes where
     messageGroupId <- v .:? "MessageGroupId"
     pure Attributes {..}
 
+data MessageAttributeValue = MessageAttributeValue {
+  stringValue      :: Maybe Text,
+  binaryValue      :: Maybe ByteString,
+  stringListValues :: [Text],
+  binaryListValues :: [ByteString],
+  dataType         :: Text
+} deriving (Show, Eq, Generic)
+
+instance FromJSON MessageAttributeValue where
+  parseJSON = withObject "MessageAttributeValue" $ \v -> do
+    stringValue <- v .:? "stringValue"
+    binaryValue <- fmap decodeBase64Text <$> v .:? "binaryValue"
+    stringListValues <- maybe [] id <$> v .:? "stringListValues"
+    binaryListValues <- maybe [] (map decodeBase64Text) <$> v .:? "binaryListValues"
+    dataType <- v .: "dataType"
+    pure MessageAttributeValue {..}
+
 data SQSEvent = SQSEvent {
   messageId         :: Text,
   receiptHandle     :: Text,
   body              :: Text,
   attributes        :: Attributes,
-  messageAttributes :: Map Text Text,
+  messageAttributes :: Map Text MessageAttributeValue,
   md5OfBody         :: Text,
   eventSource       :: Text,
   eventSourceARN    :: Text,
@@ -62,3 +83,6 @@ data SQSEvent = SQSEvent {
 } deriving (Show, Eq, Generic)
 
 instance FromJSON SQSEvent
+
+decodeBase64Text :: Text -> ByteString
+decodeBase64Text = B64.decodeLenient . TE.encodeUtf8
