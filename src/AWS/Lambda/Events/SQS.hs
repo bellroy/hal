@@ -53,6 +53,10 @@ instance FromJSON Attributes where
     messageGroupId <- v .:? "MessageGroupId"
     pure Attributes {..}
 
+-- | An SQS message attribute value as it appears in Lambda SQS event payloads.
+--
+-- See the <https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#example-standard-queue-message-event AWS Lambda SQS event payload example>
+-- for the JSON shape used under @messageAttributes@.
 data MessageAttributeValue = MessageAttributeValue {
   stringValue      :: Maybe Text,
   binaryValue      :: Maybe ByteString,
