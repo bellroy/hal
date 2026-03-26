@@ -1,4 +1,5 @@
 {-# LANGUAGE ApplicativeDo   #-}
+{-# LANGUAGE NamedFieldPuns  #-}
 {-# LANGUAGE RecordWildCards #-}
 
 {-|
@@ -13,6 +14,7 @@ Stability   : stable
 module AWS.Lambda.Events.SQS (
   Records (..),
   Attributes (..),
+  MessageAttribute (..),
   MessageAttributeValue (..),
   SQSEvent (..)
 ) where
@@ -21,9 +23,12 @@ import           Data.Aeson             (FromJSON (..), withObject, (.:), (.:?))
 import           Data.ByteString        (ByteString)
 import qualified Data.ByteString.Base64 as B64
 import           Data.Map               (Map)
+import           Data.Scientific        (Scientific)
 import           Data.Text              (Text)
+import qualified Data.Text              as Text
 import qualified Data.Text.Encoding     as TE
 import           GHC.Generics           (Generic)
+import           Text.Read              (readMaybe)
 
 -- | Represents an event from AWS SQS.
 --
@@ -53,33 +58,42 @@ instance FromJSON Attributes where
     messageGroupId <- v .:? "MessageGroupId"
     pure Attributes {..}
 
--- | An SQS message attribute value as it appears in Lambda SQS event payloads.
+-- | An SQS message attribute as it appears in Lambda SQS event payloads.
 --
 -- See the <https://docs.aws.amazon.com/lambda/latest/dg/with-sqs.html#example-standard-queue-message-event AWS Lambda SQS event payload example>
 -- for the JSON shape used under @messageAttributes@.
-data MessageAttributeValue = MessageAttributeValue {
-  stringValue      :: Maybe Text,
-  binaryValue      :: Maybe ByteString,
-  stringListValues :: [Text],
-  binaryListValues :: [ByteString],
-  dataType         :: Text
+data MessageAttribute = MessageAttribute {
+  customTypeLabel :: Maybe Text,
+  value           :: MessageAttributeValue
 } deriving (Show, Eq, Generic)
 
-instance FromJSON MessageAttributeValue where
-  parseJSON = withObject "MessageAttributeValue" $ \v -> do
-    stringValue <- v .:? "stringValue"
-    binaryValue <- fmap decodeBase64Text <$> v .:? "binaryValue"
-    stringListValues <- maybe [] id <$> v .:? "stringListValues"
-    binaryListValues <- maybe [] (map decodeBase64Text) <$> v .:? "binaryListValues"
+instance FromJSON MessageAttribute where
+  parseJSON = withObject "MessageAttribute" $ \v -> do
     dataType <- v .: "dataType"
-    pure MessageAttributeValue {..}
+    let (baseType, customTypeLabel) = splitDataType dataType
+
+    value <- case baseType of
+      "Binary" -> Binary . decodeBase64Text <$> v .: "binaryValue"
+      "Number" -> Number <$> (v .: "stringValue" >>= parseNumber)
+      "String" -> String <$> v .: "stringValue"
+      _ -> fail $ "Unexpected message attribute dataType: " <> show dataType
+
+    pure MessageAttribute { customTypeLabel, value }
+    where
+      parseNumber = maybe (fail "can't parse stringValue into Scientific") pure . readMaybe
+
+data MessageAttributeValue
+  = Binary ByteString
+  | Number Scientific
+  | String Text
+  deriving (Show, Eq, Generic)
 
 data SQSEvent = SQSEvent {
   messageId         :: Text,
   receiptHandle     :: Text,
   body              :: Text,
   attributes        :: Attributes,
-  messageAttributes :: Map Text MessageAttributeValue,
+  messageAttributes :: Map Text MessageAttribute,
   md5OfBody         :: Text,
   eventSource       :: Text,
   eventSourceARN    :: Text,
@@ -90,3 +104,10 @@ instance FromJSON SQSEvent
 
 decodeBase64Text :: Text -> ByteString
 decodeBase64Text = B64.decodeLenient . TE.encodeUtf8
+
+splitDataType :: Text -> (Text, Maybe Text)
+splitDataType dataType =
+  case Text.breakOn "." dataType of
+    (baseType, "") -> (baseType, Nothing)
+    (baseType, customTypeLabel) ->
+      (baseType, Just $ Text.drop 1 customTypeLabel)
