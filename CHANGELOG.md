@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog][chg] and this project adheres to
 ## Unreleased
   - Add `messageGroupId` to SQS Attributes.
   - Fix the type of `messageAttributes` in `SQSEvent`.
+  - Fix header parsing to accept `null` values serialised as `{}` 
 
 ## `1.1` - 2023-12-18
 
