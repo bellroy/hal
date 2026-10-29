@@ -7,11 +7,13 @@ on:
   pull_request:
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
   build:
     continue-on-error: ${{ matrix.experimental }}
     strategy:
+      fail-fast: false
       matrix:
         resolver:
           - lts-13
@@ -23,6 +25,9 @@ jobs:
           - lts-19
           - lts-20
           - lts-21
+          - lts-22
+          - lts-23
+          - lts-24
         experimental:
           - false
         include:
@@ -32,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.stack
