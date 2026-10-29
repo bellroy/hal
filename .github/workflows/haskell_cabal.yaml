@@ -7,46 +7,60 @@ on:
   pull_request:
     branches:
       - master
+  workflow_dispatch:
 
 jobs:
   build:
     strategy:
+      fail-fast: false
       matrix:
         plan:
           - ghc-version: '8.4.4'
-            cabal-version: '2.4'
+            cabal-version: '3.10'
+            ubuntu-version: '24.04'
           - ghc-version: '8.8'
-            cabal-version: '3.0'
+            cabal-version: '3.10'
+            ubuntu-version: '24.04'
           - ghc-version: '8.10.7'
-            cabal-version: '3.0'
+            cabal-version: '3.10'
+            ubuntu-version: '24.04'
           - ghc-version: '9.0.2'
-            cabal-version: '3.0'
+            cabal-version: '3.10'
+            ubuntu-version: '24.04'
           - ghc-version: '9.2.4'
-            cabal-version: '3.0'
+            cabal-version: '3.10'
+            ubuntu-version: '24.04'
           - ghc-version: '9.4.2'
-            cabal-version: '3.0'
-    runs-on: ubuntu-latest
+            cabal-version: '3.10'
+            ubuntu-version: '24.04'
+          - ghc-version: '9.6.7'
+            cabal-version: '3.10'
+            ubuntu-version: 'latest'
+          - ghc-version: '9.8.4'
+            cabal-version: '3.12'
+            ubuntu-version: 'latest'
+          - ghc-version: '9.10.3'
+            cabal-version: '3.14'
+            ubuntu-version: 'latest'
+    runs-on: 'ubuntu-${{ matrix.plan.ubuntu-version }}'
     steps:
       - uses: actions/checkout@v2
       - name: Cache
-        uses: actions/cache@v2
+        uses: actions/cache@v4
         with:
           path: |
             ~/.cabal/packages
             ~/.cabal/store
             dist-newstyle
-          key: ${{ matrix.plan.ghc-version }}
+          key: ${{ matrix.plan.ghc-version }}-${{ hashFiles('hal.cabal') }}
+          # Still use a reasonable warm start on a miss
+          restore-keys: |
+            ${{ matrix.plan.ghc-version }}-
       - name: Install Cabal
-        uses: haskell/actions/setup@v1
+        uses: haskell-actions/setup@v2
         with:
           ghc-version: ${{ matrix.plan.ghc-version }}
           cabal-version: ${{ matrix.plan.cabal-version }}
-      - name: Install Project Dependencies (Cabal v3)
-        run: |
-          set -ex
-          cabal install --lib --force-reinstalls --ghc-options=-O0 --reorder-goals --max-backjumps=-1
-          set +ex
-        if: "startsWith(matrix.plan.cabal-version, '3')"
       - name: Install Project Dependencies (Cabal v2)
         run: |
           set -ex
